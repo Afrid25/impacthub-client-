@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, ChevronRight, ShieldCheck } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, ChevronRight, ShieldCheck, Calendar } from "lucide-react";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+} from "@/components/ui/combobox";
 
 const eventTypes = [
   "Cleanup",
@@ -16,34 +23,83 @@ const eventTypes = [
 export default function AddEventsPage() {
   const [formData, setFormData] = useState({
     title: "",
-    eventType: "",
+    eventType: eventTypes[0],
     date: "",
     location: "",
     thumbnail: "",
     description: "",
   });
+  const [errors, setErrors] = useState({});
+
+  const [today, setToday] = useState("");
+  const dateInputRef = useRef(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setToday(new Date().toISOString().split("T")[0]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for the field being edited
+    if (errors[name]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
-  const handleSubmit = async(e) => {
+  const openDatePicker = () => {
+    const dateInput = dateInputRef.current;
+    if (!dateInput) {
+      return;
+    }
+
+    if (typeof dateInput.showPicker === "function") {
+      dateInput.showPicker();
+    } else {
+      dateInput.focus();
+      dateInput.click();
+    }
+  };
+
+  const validate = () => {
+    const next = {};
+    if (!formData.eventType?.trim()) {
+      next.eventType = "Event type is required.";
+    }
+    if (!formData.date) {
+      next.date = "Event date is required.";
+    } else if (formData.date < today) {
+      next.date = "Event date cannot be in the past.";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) {
+      return;
+    }
     const res = await fetch("http://localhost:4500/add-events", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-  });
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...formData,
+        eventType: formData.eventType.trim(),
+      }),
+    });
 
-  const data = await res.json();
-    
-  console.log("Server Response:", data);
+    const data = await res.json();
+
+    console.log("Server Response:", data);
   };
-
-  console.log("Form Data:", formData);
 
   return (
     <div className="min-h-svh bg-background text-foreground">
@@ -86,32 +142,82 @@ export default function AddEventsPage() {
                     <label className="block text-xs font-medium dark:text-[#E4E4E7] text-foreground mb-1.5">
                       Event Type
                     </label>
-                    <select
-                      name="eventType"
+                    <Combobox
+                      id="event-type-combobox"
                       value={formData.eventType}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground dark:border-[#45454D] focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      onValueChange={(value) => {
+                        setFormData((prev) => ({ ...prev, eventType: value }));
+                        if (errors.eventType) {
+                          setErrors((prev) => {
+                            const next = { ...prev };
+                            delete next.eventType;
+                            return next;
+                          });
+                        }
+                      }}
                     >
-                      <option value="">Select an event type</option>
-                      {eventTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
+                      <ComboboxInput
+                        name="eventType"
+                        placeholder="Select or type an event type"
+                        className="w-full rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground dark:border-[#45454D] focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+                      />
+                      <ComboboxContent>
+                        <ComboboxList>
+                          {eventTypes.map((type) => (
+                            <ComboboxItem key={type} value={type}>
+                              {type}
+                            </ComboboxItem>
+                          ))}
+                          {formData.eventType?.trim() &&
+                            !eventTypes.includes(formData.eventType.trim()) && (
+                              <ComboboxItem
+                                value={formData.eventType.trim()}
+                              >
+                                Create &apos;{formData.eventType.trim()}&apos;
+                              </ComboboxItem>
+                            )}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    </Combobox>
+                    {errors.eventType && (
+                      <p className="mt-1 text-xs text-error">
+                        {errors.eventType}
+                      </p>
+                    )}
                   </div>
-                  <div className="col-span-2 md:col-span-1">
+                  <div className="relative col-span-2 md:col-span-1">
                     <label className="block text-xs font-medium dark:text-[#E4E4E7] text-foreground mb-1.5">
                       Event date
                     </label>
-                    <input
-                      name="date"
-                      type="date"
-                      placeholder="Choose a future date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      className="w-full rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground dark:border-[#45454D] focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    />
+                    <div className="relative">
+                      <button
+                        type="button"
+                        aria-label="Choose event date"
+                        onClick={openDatePicker}
+                        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-foreground dark:text-[#E4E4E7]"
+                      >
+                        <Calendar className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <input
+                        ref={dateInputRef}
+                        name="date"
+                        type="date"
+                        {...(today ? { min: today } : {})}
+                        placeholder="Choose a future date"
+                        value={formData.date}
+                        onChange={handleChange}
+                        className={`w-full rounded-lg border pr-10 bg-surface-elevated px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground [&::-webkit-calendar-picker-indicator]:opacity-0 focus:border-primary focus:ring-1 focus:ring-primary transition-all ${
+                          errors.date
+                            ? "border-error text-error"
+                            : "border-border dark:border-[#45454D]"
+                        }`}
+                      />
+                    </div>
+                    {errors.date && (
+                      <p className="mt-1 text-xs text-error">
+                        {errors.date}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div>

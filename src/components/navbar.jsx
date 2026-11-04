@@ -1,319 +1,229 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast, Toaster } from "sonner";
 import Link from "next/link";
-import Image from "next/image";
-import {
-  Menu,
-  Sun,
-  Moon,
-  User,
-  LogOut,
-  Plus,
-  Calendar,
-  ChevronDown,
-  X,
-} from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ModeToggle } from "@/components/mode-toggle";
+import { authClient } from "@/lib/auth-client";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
-const THEME_STORAGE_KEY = "impacthub-theme";
+const defaultNavLinks = [
+  { label: "Upcoming Events", href: "/all-events" },
+  { label: "Create Event", href: "/add-events" },
+  { label: "Manage Events", href: "/manage-events" },
+  { label: "Joined Events", href: "/joined-events" },
+];
 
-function applyTheme(theme) {
-  if (typeof document === "undefined") {
-    return;
-  }
-  if (theme === "dark") {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-}
-
-export default function Navbar({
-  isAuthenticated = false,
-  user = null,
-  onLogin,
-  onLogout,
+export function Navbar({
+  brand = "ImpactHub",
+  brandHref = "/",
+  navLinks = defaultNavLinks,
+  authLinks = [],
+  className = "",
 }) {
-  const [theme, setTheme] = useState("dark");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
 
-  useEffect(() => {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    const initialTheme = saved || "dark";
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-    applyTheme(initialTheme);
-    localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
+  const toggleMobileMenu = () => setMobileOpen((prev) => !prev);
 
-    // Sync React state with saved preference after hydration.
-    // Initial render is always "dark" on both server and client, so no mismatch.
-    if (initialTheme !== theme) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTheme(initialTheme);
+  const handleLogout = async () => {
+    const { error } = await authClient.signOut();
+
+    if (error) {
+      toast.error(error.message || "Logout failed");
+      return;
     }
 
-    const handleStorageChange = (e) => {
-      if (e.key === THEME_STORAGE_KEY) {
-        const next = e.newValue || "dark";
-        setTheme(next);
-        applyTheme(next);
-        localStorage.setItem(THEME_STORAGE_KEY, next);
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      applyTheme(next);
-      localStorage.setItem(THEME_STORAGE_KEY, next);
-      return next;
-    });
-  }, []);
-
-  const displayName = user?.name || user?.email || "User";
-  const profileImage = user?.image || null;
-
-  const authLinks = (
-    <>
-      <Link
-        href="/upcoming-events"
-        className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-      >
-        Upcoming Events
-      </Link>
-      {isAuthenticated ? (
-        <div className="flex items-center gap-3">
-          <div
-            className="relative inline-block"
-            onMouseEnter={() => setDropdownOpen(true)}
-            onMouseLeave={() => setDropdownOpen(false)}
-            onClick={() => setDropdownOpen((prev) => !prev)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setDropdownOpen((prev) => !prev);
-              }
-            }}
-            aria-haspopup="menu"
-            aria-expanded={dropdownOpen}
-            aria-label="User profile menu"
-          >
-            {profileImage ? (
-              <Image
-                src={profileImage}
-                alt={displayName}
-                className="h-9 w-9 rounded-full border border-border object-cover transition-transform hover:scale-105"
-                width={36}
-                height={36}
-                priority
-              />
-            ) : (
-              <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <ChevronDown className="ml-1.5 h-3.5 w-3.5 text-muted-foreground" />
-          </div>
-          {dropdownOpen && (
-            <div
-              className="absolute right-0 mt-2 w-48 bg-surface border border-border rounded-lg shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-2"
-              role="menu"
-              aria-labelledby="profile-menu"
-            >
-              <Link
-                href="/events/create"
-                className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-surface-elevated transition-colors"
-                role="menuitem"
-              >
-                <Plus className="h-4 w-4" /> Create Event
-              </Link>
-              <Link
-                href="/manage-events"
-                className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-surface-elevated transition-colors"
-                role="menuitem"
-              >
-                <Calendar className="h-4 w-4" /> Manage Events
-              </Link>
-              <Link
-                href="/joined-events"
-                className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-surface-elevated transition-colors"
-                role="menuitem"
-              >
-                <User className="h-4 w-4" /> Joined Events
-              </Link>
-              <hr className="border-border my-1" />
-              <button
-                onClick={onLogout}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-surface-elevated transition-colors text-left"
-                role="menuitem"
-              >
-                <LogOut className="h-4 w-4" /> Logout
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <Button
-          onClick={onLogin}
-          variant="default"
-          className="text-sm font-medium"
-        >
-          Login
-        </Button>
-      )}
-    </>
-  );
-
-  const toggleMobileMenu = () => setMobileMenuOpen((prev) => !prev);
+    toast.success("Logged out successfully");
+    router.push("/");
+    router.refresh();
+  };
 
   return (
-    <nav className="sticky top-4 z-40 w-[95%] max-w-7xl mx-auto rounded-4xl border border-border bg-background/95 backdrop-blur-md shadow-lg">
-      <div className="flex items-center justify-between h-16 px-4 lg:px-8">
-        {/* Logo & Brand */}
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-heading font-bold text-xl">
-              IH
-            </div>
-            <span className="font-heading font-bold text-xl tracking-tight">
-              ImpactHub
-            </span>
-          </Link>
+    <nav
+      aria-label="Main navigation"
+      className={cn(
+        "sticky top-4 z-40 mx-auto w-[calc(100%-2rem)] max-w-7xl rounded-3xl border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-background/80 transition-colors duration-300",
+        className,
+      )}
+    >
+      <Toaster />
+
+      {/* NAVBAR MAIN ROW */}
+      <div className="grid grid-cols-[1fr_auto] items-center px-4 py-3 sm:px-6 lg:grid-cols-[1fr_auto_1fr]">
+        {/* LEFT: LOGO + BRAND */}
+        <Link
+          href={brandHref}
+          aria-label={`${brand} home`}
+          className="flex w-fit items-center gap-2.5 transition-opacity hover:opacity-90"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
+            IH
+          </div>
+          <span className="text-xl font-bold tracking-tight text-foreground">
+            {brand}
+          </span>
+        </Link>
+
+        {/* CENTER: DESKTOP NAVIGATION */}
+        <div className="hidden lg:flex items-center justify-center gap-5 xl:gap-7">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="relative whitespace-nowrap text-sm font-medium transition-colors duration-200 text-foreground/75 hover:text-primary"
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
 
-        {/* Desktop Navigation */}
-        <div className="hidden lg:flex items-center gap-8">
-          <Link
-            href="/upcoming-events"
-            className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-          >
-            Upcoming Events
-          </Link>
-          {authLinks}
-          <button
-            onClick={toggleTheme}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-surface text-foreground hover:bg-surface-elevated transition-colors"
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </button>
+        {/* RIGHT: THEME TOGGLE + AUTH */}
+        <div className="hidden lg:flex items-center justify-end gap-3">
+          {/* AUTH LINKS (reserved for future auth implementation) */}
+          {authLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              {link.label}
+            </Link>
+          ))}
+
+          {/* THEME TOGGLE */}
+          <ModeToggle />
+
+          {isPending ? (
+            <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+          ) : user ? (
+            
+
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label="Open profile menu"
+                      title={user.name}
+                      className="rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                    />
+                  }
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src={user.image || undefined}
+                      alt={user.name || "User"}
+                    />
+                    <AvatarFallback>
+                      {user.name?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </PopoverTrigger>
+
+                <PopoverContent align="end" sideOffset={8} className="w-64">
+                  <PopoverHeader>
+                    <PopoverTitle>{user.name}</PopoverTitle>
+                    <PopoverDescription>{user.email}</PopoverDescription>
+                  </PopoverHeader>
+
+                  <div className="mt-4 flex flex-col gap-3 text-sm">
+                    <Link href="/add-events">Create Event</Link>
+                    <Link href="/manage-event">Manage Events</Link>
+                    <Link href="/joined-events">Joined Events</Link>
+                  </div>
+                  <Button onClick={handleLogout}>Log Out</Button>
+                </PopoverContent>
+              </Popover>
+             
+                 ) : (
+            <Button size="sm" onClick={() => router.push("/login")}>
+              Login
+            </Button>
+          )}
         </div>
 
-        {/* Mobile Controls */}
-        <div className="flex items-center gap-3 lg:hidden">
-          <button
-            onClick={toggleTheme}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-surface text-foreground hover:bg-surface-elevated transition-colors"
-            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-          </button>
-          <button
+        {/* MOBILE CONTROLS */}
+        <div className="flex items-center justify-end gap-2 lg:hidden">
+          <ModeToggle />
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={toggleMobileMenu}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-surface text-foreground hover:bg-surface-elevated transition-colors"
-            aria-label="Toggle navigation menu"
-            aria-expanded={mobileMenuOpen}
+            aria-label={
+              mobileOpen ? "Close navigation menu" : "Open navigation menu"
+            }
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
+            className="rounded-lg"
           >
-            {mobileMenuOpen ? (
+            {mobileOpen ? (
               <X className="h-5 w-5" />
             ) : (
               <Menu className="h-5 w-5" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
+      {/* MOBILE NAVIGATION */}
+      {mobileOpen && (
         <div
-          className="lg:hidden border-t border-border bg-background p-4"
-          role="menu"
-          aria-label="Mobile navigation"
+          id="mobile-navigation"
+          className="border-t border-border px-4 pb-4 pt-3 lg:hidden"
         >
-          <div className="space-y-3">
-            <Link
-              href="/upcoming-events"
-              onClick={toggleMobileMenu}
-              className="block text-sm font-medium text-foreground hover:text-primary py-2 transition-colors"
-            >
-              Upcoming Events
-            </Link>
-            {isAuthenticated ? (
-              <div className="space-y-1">
-                <Link
-                  href="/events/create"
-                  onClick={toggleMobileMenu}
-                  className="block text-sm font-medium text-foreground hover:text-primary py-2 transition-colors"
-                >
-                  Create Event
-                </Link>
-                <Link
-                  href="/manage-events"
-                  onClick={toggleMobileMenu}
-                  className="block text-sm font-medium text-foreground hover:text-primary py-2 transition-colors"
-                >
-                  Manage Events
-                </Link>
-                <Link
-                  href="/joined-events"
-                  onClick={toggleMobileMenu}
-                  className="block text-sm font-medium text-foreground hover:text-primary py-2 transition-colors"
-                >
-                  Joined Events
-                </Link>
-                <button
-                  onClick={() => {
-                    toggleMobileMenu();
-                    if (onLogout) onLogout();
-                  }}
-                  className="block w-full text-left text-sm font-medium text-destructive hover:bg-surface-elevated py-2 transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  toggleMobileMenu();
-                  if (onLogin) onLogin();
-                }}
-                className="block w-full text-left text-sm font-medium text-foreground bg-primary text-primary-foreground py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          <div className="flex flex-col gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={toggleMobileMenu}
+                className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                Login
-              </button>
-            )}
-          </div>
-          <div className="mt-6 pt-4 border-t border-border">
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors"
-            >
-              {theme === "dark" ? (
-                <>
-                  <Sun className="h-4 w-4" /> Switch to Light Mode
-                </>
-              ) : (
-                <>
-                  <Moon className="h-4 w-4" /> Switch to Dark Mode
-                </>
-              )}
-            </button>
+                {link.label}
+              </Link>
+            ))}
+
+            {/* AUTH LINKS (reserved for future auth implementation) */}
+            {authLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={toggleMobileMenu}
+                className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       )}

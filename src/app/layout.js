@@ -1,6 +1,6 @@
 import { Manrope, Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/navbar";
+import NavbarClient from "@/components/navbar-client";
 import Footer from "@/components/footer";
 
 
@@ -29,12 +29,9 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
-
+        <NavbarClient />
         {children}
-
         <Footer />
-        
       </body>
     </html>
   );
