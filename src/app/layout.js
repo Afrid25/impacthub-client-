@@ -1,7 +1,8 @@
 import { Manrope, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
-import { Footer } from "react-day-picker";
+import Footer from "@/components/footer";
+
 
 const manrope = Manrope({
   variable: "--font-heading",
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
         {children}
 
         <Footer />
+        
       </body>
     </html>
   );
