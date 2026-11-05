@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, HandHeart, Users, ShieldCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, HandHeart, Users, ShieldCheck, CalendarCheck } from "lucide-react";
 
 export default function Banner() {
   return (
@@ -72,7 +70,7 @@ export default function Banner() {
           </div>
 
           {/* Feature highlights */}
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 px-2 sm:px-0">
+          <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-2 sm:px-0">
             <div className="flex flex-col items-center gap-3">
               <div className="h-12 w-12 rounded-lg bg-surface flex items-center justify-center border border-border">
                 <Users className="h-6 w-6 text-primary" />
@@ -93,7 +91,7 @@ export default function Banner() {
                 Join Activities
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground text-center max-w-xs">
-                Register for events and track your participation.
+                Volunteer for local causes and make an immediate impact.
               </p>
             </div>
 
@@ -106,6 +104,18 @@ export default function Banner() {
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground text-center max-w-xs">
                 Organize your own social development event.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-12 w-12 rounded-lg bg-surface flex items-center justify-center border border-border">
+                <CalendarCheck className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="font-heading font-semibold text-foreground text-sm sm:text-base">
+                Track Participation
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground text-center max-w-xs">
+                Manage your joined events and volunteer commitments in one place.
               </p>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,15 +29,40 @@ export default function SignUpPage() {
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
 
+    if (isLoading) return;
+
     const formData = new FormData(e.currentTarget);
     const user = Object.fromEntries(formData.entries());
 
-    if (
-      !user.password ||
-      user.password.length < 6 ||
-      !/[a-z]/.test(user.password) ||
-      !/[A-Z]/.test(user.password)
-    ) {
+    const name = user.name?.trim() || "";
+    const email = user.email?.trim() || "";
+    const image = user.image?.trim() || "";
+    const password = user.password || "";
+
+    if (!name) {
+      toast.error("Name is required.");
+      return;
+    }
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (image) {
+      try {
+        const parsedUrl = new URL(image);
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+          throw new Error("Invalid protocol");
+        }
+      } catch {
+        toast.error("Please enter a valid Profile Photo URL (http or https).");
+        return;
+      }
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
+    if (!passwordRegex.test(password)) {
       toast.error(
         "Password must be at least 6 characters with one uppercase and one lowercase letter."
       );
@@ -47,11 +72,11 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await authClient.signUp.email({
-        name: user.name,
-        email: user.email,
-        image: user.image,
-        password: user.password,
+      const { error } = await authClient.signUp.email({
+        name,
+        email,
+        image,
+        password,
       });
 
       if (error) {
@@ -61,6 +86,7 @@ export default function SignUpPage() {
 
       toast.success("Account created successfully!");
       router.push("/");
+      router.refresh();
     } catch (err) {
       toast.error(err.message || "Registration failed. Please try again.");
     } finally {
@@ -101,6 +127,7 @@ export default function SignUpPage() {
                   name="name"
                   type="text"
                   placeholder="e.g. John Doe"
+                  required
                 />
               </Field>
 
@@ -111,6 +138,7 @@ export default function SignUpPage() {
                   name="email"
                   type="email"
                   placeholder="m@example.com"
+                  required
                 />
               </Field>
 
@@ -131,6 +159,7 @@ export default function SignUpPage() {
                   name="password"
                   type="password"
                   placeholder="••••••"
+                  required
                 />
                 <FieldDescription className="text-xs">
                   Must contain at least one uppercase letter, one lowercase

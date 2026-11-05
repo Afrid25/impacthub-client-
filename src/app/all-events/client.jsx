@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowUpRight } from "lucide-react";
 
 const eventTypes = [
   "All Categories",
@@ -18,19 +19,38 @@ const eventTypes = [
 export default function AllEventsClient({
   initialEvents,
 }) {
-  const [events, setEvents] = useState(initialEvents);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const events = Array.isArray(initialEvents) ? initialEvents : [];
+  const [loading] = useState(false);
+  const [error] = useState(null);
   const [filterType, setFilterType] = useState("All Categories");
   const [sortBy, setSortBy] = useState("date");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Include any custom event categories created via the Combobox
+  const categoryOptions = Array.from(
+    new Set([
+      ...eventTypes,
+      ...events
+        .map((e) => e.eventType?.trim())
+        .filter(Boolean),
+    ])
+  );
+
   const filteredEvents = events
     .filter((event) => {
-      if (!searchQuery) return true;
-      return event.title
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      // Only upcoming events (today or future)
+      const eventDate = (event.date || event.data || "").slice(0, 10);
+      return !eventDate || eventDate >= today;
+    })
+    .filter((event) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (event.title || "").toLowerCase().includes(q) ||
+        (event.location || "").toLowerCase().includes(q)
+      );
     })
     .filter((event) => {
       if (filterType === "All Categories") return true;
@@ -38,9 +58,9 @@ export default function AllEventsClient({
     })
     .sort((a, b) => {
       if (sortBy === "date") {
-        return new Date(a.date) - new Date(b.date);
+        return new Date(a.date || a.data || 0) - new Date(b.date || b.data || 0);
       }
-      return a.title.localeCompare(b.title);
+      return (a.title || "").localeCompare(b.title || "");
     });
 
   return (
@@ -77,7 +97,7 @@ export default function AllEventsClient({
                 onChange={(e) => setFilterType(e.target.value)}
                 className="w-full rounded-lg border border-border bg-surface-elevated px-4 py-3 text-sm text-foreground dark:border-[#45454D] focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               >
-                {eventTypes.map((type) => (
+                {categoryOptions.map((type) => (
                   <option key={type} value={type}>
                     {type}
                   </option>
@@ -220,7 +240,17 @@ export default function AllEventsClient({
                     year: "numeric",
                   })}
                 </p>
-                
+
+                {/* View Details Button */}
+                <Link
+                  href={`/all-events/${event._id || event.id}`}
+                  className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-md"
+                >
+                  View Details
+                  <ArrowUpRight size={17} />
+                </Link>
+
+
               </div>
             ))}
           </div>

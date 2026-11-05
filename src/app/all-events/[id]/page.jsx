@@ -1,22 +1,46 @@
-export const instant = false;
-
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Calendar, MapPin, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import JoiningCardPage from "@/components/joined/joiningCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function EventDetailsPage({ params }) {
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+
+function EventDetailsSkeleton() {
+  return (
+    <div className="min-h-svh bg-background text-foreground">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <Skeleton className="h-5 w-32" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Skeleton className="aspect-video w-full rounded-2xl" />
+          <Skeleton className="h-80 w-full rounded-2xl" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Skeleton className="h-36 w-full rounded-2xl" />
+          <Skeleton className="h-36 w-full rounded-2xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function EventDetailsContent({ params }) {
   const { id } = await params;
   let event = null;
 
   try {
-    const res = await fetch(`http://localhost:4500/all-events/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/all-events/${id}`, {
       cache: "no-store",
     });
     if (res.ok) {
       event = await res.json();
     }
   } catch (e) {
+    if (e?.digest === "HANGING_PROMISE_REJECTION") {
+      throw e;
+    }
     console.error("Failed to fetch event:", e);
   }
 
@@ -137,5 +161,13 @@ export default async function EventDetailsPage({ params }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EventDetailsPage({ params }) {
+  return (
+    <Suspense fallback={<EventDetailsSkeleton />}>
+      <EventDetailsContent params={params} />
+    </Suspense>
   );
 }

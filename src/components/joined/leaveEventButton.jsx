@@ -15,6 +15,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+
 export default function LeaveEventButton({ joiningId, onLeave }) {
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -25,7 +28,7 @@ export default function LeaveEventButton({ joiningId, onLeave }) {
     setDeleting(true);
     try {
       const res = await fetch(
-        `http://localhost:4500/delete-events/${joiningId}`,
+        `${API_BASE_URL}/delete-events/${joiningId}`,
         { method: "DELETE", credentials: "include" }
       );
       const data = await res.json().catch(() => ({}));

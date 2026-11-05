@@ -57,8 +57,8 @@ const LinkedinIcon = () => (
 );
 
 const navLinks = [
-  { name: "Upcoming Events", href: "/upcoming-events" },
-  { name: "Create Event", href: "/events/create" },
+  { name: "Upcoming Events", href: "/all-events" },
+  { name: "Create Event", href: "/add-events" },
   { name: "Manage Events", href: "/manage-events" },
   { name: "Joined Events", href: "/joined-events" },
   { name: "Login", href: "/login" },
@@ -119,7 +119,7 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/events/create"
+                  href="/add-events"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Create an Event <ChevronRight className="ml-1 h-3 w-3" />
@@ -127,7 +127,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/upcoming-events"
+                  href="/all-events"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Browse Events <ChevronRight className="ml-1 h-3 w-3" />

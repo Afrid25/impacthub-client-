@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Calendar, MapPin, User } from "lucide-react";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+
 const JoiningCardPage = ({ event, formattedDate, formattedTime }) => {
-  const { data: session, isPending } = authClient.useSession();
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
   const user = session?.user;
 
   const [isJoining, setIsJoining] = useState(false);
@@ -17,6 +22,7 @@ const JoiningCardPage = ({ event, formattedDate, formattedTime }) => {
 
     if (!user) {
       toast.error("Please log in to join this event.");
+      router.push("/login");
       return;
     }
 
@@ -43,7 +49,7 @@ const JoiningCardPage = ({ event, formattedDate, formattedTime }) => {
       };
 
       // Identity fields are re-applied server-side from the verified session.
-      const res = await fetch("http://localhost:4500/joined", {
+      const res = await fetch(`${API_BASE_URL}/joined`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -104,7 +110,8 @@ const JoiningCardPage = ({ event, formattedDate, formattedTime }) => {
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-primary" />
               <p className="text-sm text-foreground">
-                Organized by Community Volunteers
+                Organized by{" "}
+                {event.userName || event.userEmail || "Community Volunteers"}
               </p>
             </div>
           </div>

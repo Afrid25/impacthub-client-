@@ -6,6 +6,9 @@ import { Eye, Pencil, Trash2, Calendar, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+
 const formatDate = (dateValue) => {
   if (!dateValue) return "Date unavailable";
   const parsed = new Date(dateValue);
@@ -28,7 +31,7 @@ export default function ManageEventCard({ event, onEdit, onDelete }) {
     setDeleting(true);
     try {
       const response = await fetch(
-        `http://localhost:4500/created-events/${eventId}`,
+        `${API_BASE_URL}/created-events/${eventId}`,
         {
           method: "DELETE",
           credentials: "include",

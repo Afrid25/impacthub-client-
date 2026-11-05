@@ -26,11 +26,17 @@ export default function JoinedEventsList({ events }) {
     );
   };
 
+  // Sort participation records by the ORIGINAL EVENT DATE (not bookingDate).
+  const sortedEvents = [...eventsList].sort(
+    (a, b) =>
+      new Date(a.date || a.data || 0) - new Date(b.date || b.data || 0)
+  );
+
   return (
     <div className="space-y-5">
-      {eventsList.length > 0 ? (
+      {sortedEvents.length > 0 ? (
         <div className="space-y-5">
-          {eventsList.map((event, index) => (
+          {sortedEvents.map((event, index) => (
             <div
               key={event._id || event.id || index}
               className="group overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-lg sm:p-5"

@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
 
 export default function RecentEvents() {
   const [events, setEvents] = useState([]);
@@ -12,14 +16,18 @@ export default function RecentEvents() {
   useEffect(() => {
     let mounted = true;
 
-    fetch("http://localhost:4500/all-events", { cache: "no-store" })
-      .then((res) => res.json())
+    // Backend applies MongoDB .find({ date: { $gte: today } }).sort({ date: 1 }).limit(6)
+    fetch(`${API_BASE_URL}/all-events?limit=6`, { cache: "no-store" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load upcoming events");
+        return res.json();
+      })
       .then((data) => {
         if (!mounted) return;
-        const allEvents = data || [];
-        const now = new Date();
+        const today = new Date().toISOString().slice(0, 10);
+        const allEvents = Array.isArray(data) ? data : [];
         const upcoming = allEvents
-          .filter((event) => new Date(event.date) > now)
+          .filter((event) => (event.date || "") >= today)
           .sort((a, b) => new Date(a.date) - new Date(b.date))
           .slice(0, 6);
         setEvents(upcoming);
@@ -40,9 +48,24 @@ export default function RecentEvents() {
     return (
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="h-8 w-8 rounded-full border-2 border-border border-t-primary animate-spin mb-4" />
-            <p className="text-muted-foreground">Loading upcoming events...</p>
+          <div className="flex items-center justify-between mb-8">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-5 w-28" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl bg-surface border border-border p-6 shadow-sm flex flex-col h-full space-y-4"
+              >
+                <Skeleton className="aspect-video w-full rounded-xl" />
+                <Skeleton className="h-6 w-24 rounded-md" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-10 w-full rounded-lg mt-auto" />
+              </div>
+            ))}
           </div>
         </div>
       </section>

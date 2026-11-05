@@ -20,6 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { toast } from "sonner";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+
 const eventTypes = [
   "Cleanup",
   "Plantation",
@@ -74,14 +77,34 @@ export default function EditEventsDialog({
 
   const validate = useCallback(() => {
     const next = {};
+    const today = new Date().toISOString().split("T")[0];
+
+    if (!formData.title?.trim()) {
+      next.title = "Event title is required.";
+    }
     if (!formData.eventType?.trim()) {
       next.eventType = "Event type is required.";
     }
     if (!formData.date) {
       next.date = "Event date is required.";
+    } else if (formData.date < today) {
+      next.date = "Event date cannot be in the past.";
     }
-    if (!formData.title?.trim()) {
-      next.title = "Event title is required.";
+    if (!formData.location?.trim()) {
+      next.location = "Event location is required.";
+    }
+    if (formData.thumbnail?.trim()) {
+      try {
+        const parsed = new URL(formData.thumbnail.trim());
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          next.thumbnail = "Thumbnail must be a valid http or https URL.";
+        }
+      } catch {
+        next.thumbnail = "Thumbnail must be a valid http or https URL.";
+      }
+    }
+    if (!formData.description?.trim()) {
+      next.description = "Event description is required.";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -108,7 +131,7 @@ export default function EditEventsDialog({
     setLoading(true);
     try {
       // Updates the ORIGINAL event; ownership is verified server-side.
-      const res = await fetch(`http://localhost:4500/update-events/${eventId}`, {
+      const res = await fetch(`${API_BASE_URL}/update-events/${eventId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -216,6 +239,7 @@ export default function EditEventsDialog({
               <input
                 name="date"
                 type="date"
+                min={new Date().toISOString().split("T")[0]}
                 value={formData.date}
                 onChange={handleChange}
                 className={`w-full rounded-lg border pr-10 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-all ${
@@ -242,6 +266,9 @@ export default function EditEventsDialog({
                 errors.location ? "border-error text-error" : "border-border"
               }`}
             />
+            {errors.location && (
+              <p className="mt-1 text-xs text-error">{errors.location}</p>
+            )}
           </div>
 
           <div>
@@ -258,6 +285,9 @@ export default function EditEventsDialog({
                 errors.thumbnail ? "border-error text-error" : "border-border"
               }`}
             />
+            {errors.thumbnail && (
+              <p className="mt-1 text-xs text-error">{errors.thumbnail}</p>
+            )}
           </div>
 
           <div>
@@ -274,6 +304,9 @@ export default function EditEventsDialog({
                 errors.description ? "border-error text-error" : "border-border"
               }`}
             />
+            {errors.description && (
+              <p className="mt-1 text-xs text-error">{errors.description}</p>
+            )}
           </div>
 
           <DialogFooter>
