@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Plus, ChevronRight, ShieldCheck, Calendar } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 import {
   Combobox,
   ComboboxInput,
@@ -30,6 +31,9 @@ export default function AddEventsPage() {
     description: "",
   });
   const [errors, setErrors] = useState({});
+
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
 
   const [today, setToday] = useState("");
   const dateInputRef = useRef(null);
@@ -85,14 +89,19 @@ export default function AddEventsPage() {
     if (!validate()) {
       return;
     }
+    // Creator identity is set server-side from the verified Better Auth session.
     const res = await fetch("http://localhost:4500/add-events", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         ...formData,
         eventType: formData.eventType.trim(),
+        userEmail: user?.email || "",
+        userName: user?.name || "",
+        userId: user?.id || "",
       }),
     });
 

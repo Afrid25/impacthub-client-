@@ -30,13 +30,13 @@ export default function Banner() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
-              href="/upcoming-events"
+              href="/all-events"
               className="flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground font-medium rounded-lg text-sm hover:bg-primary/90 transition-colors"
             >
               Explore Events <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/events/create"
+              href="/add-events"
               className="flex items-center gap-2 px-8 py-3.5 border border-border bg-surface text-foreground font-medium rounded-lg text-sm hover:bg-surface-elevated transition-colors"
             >
               Create an Event

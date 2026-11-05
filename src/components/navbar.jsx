@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
@@ -22,14 +22,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 
 const defaultNavLinks = [
   { label: "Upcoming Events", href: "/all-events" },
@@ -50,6 +42,15 @@ export function Navbar({
   const user = session?.user;
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Mounted state prevents hydration mismatch: SSR has no session cookie,
+  // so auth-dependent UI (avatar vs. Login button) must only render after
+  // the client has hydrated and useSession() can read cookies.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
   const toggleMobileMenu = () => setMobileOpen((prev) => !prev);
 
@@ -65,6 +66,74 @@ export function Navbar({
     router.push("/");
     router.refresh();
   };
+
+  // Render auth-dependent UI only after mount to avoid hydration mismatch
+  // between SSR (no session cookie) and client (cookie available).
+  const authControls = mounted ? (
+    isPending ? (
+      <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+    ) : user ? (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={({ ...triggerProps }) => (
+            <button
+              type="button"
+              aria-label="Open profile menu"
+              title={user.name}
+              className="rounded-full"
+              {...triggerProps}
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarImage
+                  src={user.image || undefined}
+                  alt={user.name || "User"}
+                />
+                <AvatarFallback>
+                  {user.name?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          )}
+        />
+
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            onSelect={() => router.push("/add-events")}
+          >
+            Create Event
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onSelect={() => router.push("/manage-events")}
+          >
+            Manage Events
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onSelect={() => router.push("/joined-events")}
+          >
+            Joined Events
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem onSelect={handleLogout}>
+            Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : (
+      <Button size="sm" onClick={() => router.push("/login")}>
+        Login
+      </Button>
+    )
+  ) : (
+    <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+  );
 
   return (
     <nav
@@ -121,53 +190,7 @@ export function Navbar({
           {/* THEME TOGGLE */}
           <ModeToggle />
 
-          {isPending ? (
-            <div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
-          ) : user ? (
-            
-
-              <Popover>
-                <PopoverTrigger
-                  render={
-                    <button
-                      type="button"
-                      aria-label="Open profile menu"
-                      title={user.name}
-                      className="rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-                    />
-                  }
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={user.image || undefined}
-                      alt={user.name || "User"}
-                    />
-                    <AvatarFallback>
-                      {user.name?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </PopoverTrigger>
-
-                <PopoverContent align="end" sideOffset={8} className="w-64">
-                  <PopoverHeader>
-                    <PopoverTitle>{user.name}</PopoverTitle>
-                    <PopoverDescription>{user.email}</PopoverDescription>
-                  </PopoverHeader>
-
-                  <div className="mt-4 flex flex-col gap-3 text-sm">
-                    <Link href="/add-events">Create Event</Link>
-                    <Link href="/manage-event">Manage Events</Link>
-                    <Link href="/joined-events">Joined Events</Link>
-                  </div>
-                  <Button onClick={handleLogout}>Log Out</Button>
-                </PopoverContent>
-              </Popover>
-             
-                 ) : (
-            <Button size="sm" onClick={() => router.push("/login")}>
-              Login
-            </Button>
-          )}
+          {authControls}
         </div>
 
         {/* MOBILE CONTROLS */}

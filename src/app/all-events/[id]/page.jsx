@@ -3,6 +3,7 @@ export const instant = false;
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Calendar, MapPin, User } from "lucide-react";
+import JoiningCardPage from "@/components/joined/joiningCard";
 
 export default async function EventDetailsPage({ params }) {
   const { id } = await params;
@@ -103,52 +104,13 @@ export default async function EventDetailsPage({ params }) {
 
           {/* Right: Event Details */}
           <div className="flex flex-col h-full">
-            <div className="rounded-2xl bg-surface border border-border p-6 sm:p-8 shadow-sm">
-              <span
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium uppercase tracking-wider mb-5"
-              >
-                {event.eventType}
-              </span>
-              <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mb-3">
-                {event.title}
-              </h1>
-              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                {event.description ||
-                "A great event starts with clear details."}
-              </p>
-
-              <div className="space-y-4 mb-8">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <div>
-                    <div className="text-sm font-medium text-foreground">
-                      {formattedDate}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formattedTime}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-foreground">{event.location}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <User className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-foreground">
-                    Organized by Community Volunteers
-                  </p>
-                </div>
-              </div>
-
-              {/* Join Event Button */}
-              <button
-                className="w-full flex justify-center items-center gap-2 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
-              >
-                Join This Event
-              </button>
-            </div>
+            <JoiningCardPage
+              event={event}
+              formattedDate={formattedDate}
+              formattedTime={formattedTime}
+            />
           </div>
+            
         </div>
 
         {/* Bottom Sections */}

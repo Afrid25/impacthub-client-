@@ -220,12 +220,7 @@ export default function AllEventsClient({
                     year: "numeric",
                   })}
                 </p>
-                <Link
-                href={`/all-events/${event.id || event._id}`}
-                className="w-full flex justify-center items-center gap-1 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
-              >
-                View Event
-              </Link>
+                
               </div>
             ))}
           </div>
