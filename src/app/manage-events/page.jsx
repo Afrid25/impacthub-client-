@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import ManageEventList from "@/components/manage-events/manageEventsList";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -50,10 +49,6 @@ async function ManageEventsContent() {
   });
 
   const user = session?.user;
-
-  if (!user) {
-    redirect("/login");
-  }
 
   // Forward the Better Auth session cookie so Express can verify the user.
   const res = await fetch(`${API_BASE_URL}/my-events`, {

@@ -2,7 +2,6 @@
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import JoinedEventsList from "@/components/joined/joinedEventsList";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -47,10 +46,6 @@ async function JoinedEventsContent() {
   });
 
   const user = session?.user;
-
-  if (!user?.email) {
-    redirect("/login");
-  }
 
   // Forward the Better Auth session cookie so Express can verify the user.
   const res = await fetch(
