@@ -62,11 +62,7 @@ export default function AddEventsPage() {
     setToday(new Date().toISOString().split("T")[0]);
   }, []);
 
-  useEffect(() => {
-    if (mounted && !isPending && !user) {
-      router.replace("/login");
-    }
-  }, [mounted, isPending, user, router]);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
