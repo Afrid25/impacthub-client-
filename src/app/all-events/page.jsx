@@ -1,14 +1,9 @@
 import React, { Suspense } from "react";
 import AllEventsClient from "./client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-
-
-
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ;
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
 
   
 
