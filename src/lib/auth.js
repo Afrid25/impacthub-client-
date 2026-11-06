@@ -8,6 +8,37 @@ if (!process.env.DB_URL) {
   throw new Error("DB_URL is missing");
 }
 
+// Normalize baseURL to a clean origin (no trailing slash or path like "/login").
+// On Vercel, if BETTER_AUTH_URL is missing or accidentally left as localhost,
+// fall back to the deployed Vercel production/deployment domain.
+function resolveAuthBaseUrl() {
+  const raw = (process.env.BETTER_AUTH_URL || "").trim();
+  const vercelHost =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+
+  if (raw) {
+    try {
+      const parsed = new URL(raw);
+      const isLocalhost =
+        parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+      if (process.env.VERCEL && isLocalhost && vercelHost) {
+        return `https://${vercelHost}`;
+      }
+      return parsed.origin;
+    } catch {
+      // fall through
+    }
+  }
+
+  if (vercelHost) {
+    return `https://${vercelHost}`;
+  }
+
+  return "http://localhost:3000";
+}
+
+const AUTH_BASE_URL = resolveAuthBaseUrl();
+
 // Reuse one MongoClient for the whole server process. globalThis is shared by
 // every bundle (proxy, route handlers, pages) and survives hot reloads, so we
 // do not open a new connection pool each time this file is evaluated.
@@ -20,12 +51,34 @@ const client =
 const db = client.db("impacthub");
 
 export const auth = betterAuth({
+  baseURL: AUTH_BASE_URL,
+
+  trustedOrigins: [
+    AUTH_BASE_URL,
+    "https://impacthub-frontend-gold.vercel.app",
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
+      : []),
+  ],
+
   database: mongodbAdapter(db, {
     client,
   }),
 
   emailAndPassword: {
     enabled: true,
+  },
+
+  account: {
+    accountLinking: {
+      enabled: true,
+      requireLocalEmailVerified: true,
+    },
+  },
+
+  onAPIError: {
+    errorURL: "/login",
   },
 
   ...(process.env.GOOGLE_CLIENT_ID &&

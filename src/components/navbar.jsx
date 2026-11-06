@@ -87,6 +87,16 @@ export function Navbar({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!mounted || isPending || !user) return;
+    if (typeof window === "undefined") return;
+
+    if (sessionStorage.getItem("impacthub_oauth_pending") === "1") {
+      sessionStorage.removeItem("impacthub_oauth_pending");
+      toast.success("Login successful!");
+    }
+  }, [mounted, isPending, user]);
+
   const handleNavigation = (href) => {
     setMobileOpen(false);
     setPopoverOpen(false);

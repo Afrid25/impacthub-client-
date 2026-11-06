@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -26,7 +26,40 @@ import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      router.replace("/");
+    }
+  }, [isPending, session, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error");
+    if (!oauthError) return;
+
+    sessionStorage.removeItem("impacthub_oauth_pending");
+
+    const friendlyMessages = {
+      account_not_linked:
+        "An unverified email/password account already exists for this email. Please sign in with your email and password.",
+      state_mismatch:
+        "Google sign-in session expired or was interrupted. Please try again.",
+      state_security_mismatch:
+        "Google sign-in state mismatch. Please click Login with Google once and try again.",
+      please_restart_the_process:
+        "Google sign-in session expired. Please try again.",
+    };
+
+    toast.error(
+      friendlyMessages[oauthError] ||
+        `Google login failed (${oauthError.replace(/_/g, " ")}).`
+    );
+    router.replace("/login");
+  }, [router]);
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
@@ -62,17 +95,34 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+
     try {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("impacthub_oauth_pending", "1");
+      }
+
       const { error } = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/",
+        errorCallbackURL: "/login",
       });
 
       if (error) {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("impacthub_oauth_pending");
+        }
         toast.error(error.message || "Google login failed");
+        setIsLoading(false);
       }
     } catch (error) {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("impacthub_oauth_pending");
+      }
       toast.error("Unable to login with Google");
+      setIsLoading(false);
     }
   };
 
@@ -96,6 +146,7 @@ export default function LoginPage() {
                   variant="outline"
                   type="button"
                   className="w-full"
+                  disabled={isLoading}
                   onClick={handleGoogleLogin}
                 >
                   Login with Google

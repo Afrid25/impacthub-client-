@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -24,7 +24,14 @@ import { authClient } from "@/lib/auth-client";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      router.replace("/");
+    }
+  }, [isPending, session, router]);
 
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
@@ -95,15 +102,32 @@ export default function SignUpPage() {
   };
 
   const handleGoogleSignUp = async () => {
+    if (isLoading) return;
+
     setIsLoading(true);
     try {
-      await authClient.signIn.social({
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("impacthub_oauth_pending", "1");
+      }
+
+      const { error } = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/",
+        errorCallbackURL: "/login",
       });
+
+      if (error) {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("impacthub_oauth_pending");
+        }
+        toast.error(error.message || "Google sign-in failed.");
+        setIsLoading(false);
+      }
     } catch (err) {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("impacthub_oauth_pending");
+      }
       toast.error(err.message || "Google sign-in failed.");
-    } finally {
       setIsLoading(false);
     }
   };
