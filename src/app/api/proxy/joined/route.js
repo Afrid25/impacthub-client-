@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function POST(request) {
   try {

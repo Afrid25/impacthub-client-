@@ -3,7 +3,7 @@ import AllEventsClient from "./client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+  process.env.NEXT_PUBLIC_API_URL;
 
   
 

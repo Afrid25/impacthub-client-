@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/combobox";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+  process.env.NEXT_PUBLIC_API_URL;
 
 const eventTypes = [
   "Cleanup",
