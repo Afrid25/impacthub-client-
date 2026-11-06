@@ -4,9 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+import { API_BASE_URL, readJson } from "@/lib/api";
 
 export default function RecentEvents() {
   const [events, setEvents] = useState([]);
@@ -18,9 +16,12 @@ export default function RecentEvents() {
 
     // Backend applies MongoDB .find({ date: { $gte: today } }).sort({ date: 1 }).limit(6)
     fetch(`${API_BASE_URL}/all-events?limit=6`, { cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load upcoming events");
-        return res.json();
+      .then(async (res) => {
+        const result = await readJson(res);
+        if (!result.ok) {
+          throw new Error(result.message || "Failed to load upcoming events");
+        }
+        return result.data;
       })
       .then((data) => {
         if (!mounted) return;

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_BASE_URL, readJson } from "@/lib/api";
 
 export async function POST(request) {
   try {
@@ -19,7 +18,7 @@ export async function POST(request) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
 
     const res = await fetch(`${API_BASE_URL}/joined`, {
       method: "POST",
@@ -30,12 +29,15 @@ export async function POST(request) {
       body: JSON.stringify(body),
     });
 
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
+    const result = await readJson(res);
+    return NextResponse.json(result.data ?? { message: result.message }, {
+      status: result.status,
+    });
   } catch (error) {
+    console.error("joined proxy failed:", error);
     return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
+      { message: "Could not reach the API. Please try again." },
+      { status: 502 }
     );
   }
 }

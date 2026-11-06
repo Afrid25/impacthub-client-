@@ -1,9 +1,7 @@
 import React, { Suspense } from "react";
 import AllEventsClient from "./client";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+import { API_BASE_URL, readJson } from "@/lib/api";
 
   
 
@@ -46,10 +44,12 @@ async function AllEventsContent() {
       cache: "no-store",
     });
 
-    if (res.ok) {
-      data = (await res.json()) || [];
+    const result = await readJson(res);
+
+    if (result.ok && Array.isArray(result.data)) {
+      data = result.data;
     } else {
-      console.error("Failed to fetch events:", res.status);
+      console.error("Failed to fetch events:", result.status);
     }
   } catch (error) {
     if (error?.digest === "HANGING_PROMISE_REJECTION") {

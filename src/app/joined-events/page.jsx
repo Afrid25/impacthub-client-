@@ -1,12 +1,12 @@
 
 import { Suspense } from "react";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import JoinedEventsList from "@/components/joined/joinedEventsList";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+import { API_BASE_URL, readJson } from "@/lib/api";
 
 function JoinedEventsSkeleton() {
   return (
@@ -40,7 +40,7 @@ function JoinedEventsSkeleton() {
 }
 
 async function JoinedEventsContent() {
-   const requestHeaders = await headers();
+  const requestHeaders = await headers();
 
   const session = await auth.api.getSession({
     headers: requestHeaders,
@@ -48,21 +48,64 @@ async function JoinedEventsContent() {
 
   const user = session?.user;
 
-  // Forward the Better Auth session cookie so Express can verify the user.
-  const res = await fetch(
-    `${API_BASE_URL}/joined-events/${encodeURIComponent(user.email)}`,
-    {
-      cache: "no-store",
-      headers: { cookie: requestHeaders.get("cookie") || "" },
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error("Failed to load joined events");
+  // The route guard (proxy.js) normally redirects first. This covers a session
+  // that expired between the guard and this render.
+  if (!user?.email) {
+    redirect("/login?callbackUrl=/joined-events");
   }
 
-  const data = await res.json();
-  const joinedEvents = Array.isArray(data) ? data : [];
+  let joinedEvents = [];
+  let loadError = null;
+
+  try {
+    // Express verifies this JWT; the identity is never taken from the browser.
+    const { token } = await auth.api.getToken({ headers: requestHeaders });
+
+    const res = await fetch(
+      `${API_BASE_URL}/joined-events/${encodeURIComponent(user.email)}`,
+      {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    const result = await readJson(res);
+
+    if (result.ok && Array.isArray(result.data)) {
+      joinedEvents = result.data;
+    } else {
+      loadError = result.message || "Could not load your joined events.";
+    }
+  } catch (error) {
+    if (error?.digest === "HANGING_PROMISE_REJECTION") {
+      throw error;
+    }
+    console.error("Failed to load joined events:", error);
+    loadError = "Could not reach the server. Please try again.";
+  }
+
+  // Show a normal error message instead of throwing. A thrown error inside a
+  // Server Component reaches the browser as the unreadable "React error #441".
+  if (loadError) {
+    return (
+      <div className="min-h-svh bg-background text-foreground">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-border bg-surface p-10 text-center">
+            <h1 className="mb-2 font-heading text-2xl font-bold">
+              We couldn&apos;t load your joined events
+            </h1>
+            <p className="mb-6 text-sm text-muted-foreground">{loadError}</p>
+            <Link
+              href="/joined-events"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Try again
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-svh bg-background text-foreground">

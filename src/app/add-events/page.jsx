@@ -21,9 +21,7 @@ import {
   ComboboxList,
   ComboboxItem,
 } from "@/components/ui/combobox";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+import { readJson } from "@/lib/api";
 
 const eventTypes = [
   "Cleanup",
@@ -54,12 +52,16 @@ export default function AddEventsPage() {
   const user = session?.user;
 
   const [today, setToday] = useState("");
+  const [minDate, setMinDate] = useState("");
   const dateInputRef = useRef(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
-    setToday(new Date().toISOString().split("T")[0]);
+    const now = new Date();
+    setToday(now.toISOString().split("T")[0]);
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    setMinDate(tomorrow.toISOString().split("T")[0]);
   }, []);
 
   
@@ -110,8 +112,8 @@ export default function AddEventsPage() {
 
     if (!formData.date) {
       next.date = "Event date is required.";
-    } else if (today && formData.date < today) {
-      next.date = "Event date cannot be in the past.";
+    } else if (today && formData.date <= today) {
+      next.date = "Event date must be a future date.";
     }
 
     if (!formData.location?.trim()) {
@@ -151,16 +153,15 @@ export default function AddEventsPage() {
     setIsSubmitting(true);
 
     try {
-      // Creator identity is set server-side
+      // Creator identity is set server-side via the Next.js JWT proxy
       // from the verified Better Auth session.
       const res = await fetch(
-        `${API_BASE_URL}/add-events`,
+        "/api/proxy/add-events",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
           body: JSON.stringify({
             title: formData.title.trim(),
             eventType: formData.eventType.trim(),
@@ -172,11 +173,11 @@ export default function AddEventsPage() {
         }
       );
 
-      const data = await res.json().catch(() => ({}));
+      const result = await readJson(res);
 
-      if (!res.ok) {
+      if (!result.ok) {
         throw new Error(
-          data.message || "Failed to create event."
+          result.message || "Failed to create event."
         );
       }
 
@@ -347,7 +348,7 @@ export default function AddEventsPage() {
                         ref={dateInputRef}
                         name="date"
                         type="date"
-                        {...(today ? { min: today } : {})}
+                        {...(minDate ? { min: minDate } : {})}
                         placeholder="Choose a future date"
                         value={formData.date}
                         onChange={handleChange}

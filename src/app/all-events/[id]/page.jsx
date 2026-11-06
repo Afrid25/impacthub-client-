@@ -4,9 +4,7 @@ import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import JoiningCardPage from "@/components/joined/joiningCard";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL;
+import { API_BASE_URL, readJson } from "@/lib/api";
 
 function EventDetailsSkeleton() {
   return (
@@ -34,8 +32,9 @@ async function EventDetailsContent({ params }) {
     const res = await fetch(`${API_BASE_URL}/all-events/${id}`, {
       cache: "no-store",
     });
-    if (res.ok) {
-      event = await res.json();
+    const result = await readJson(res);
+    if (result.ok && result.data && (result.data._id || result.data.id)) {
+      event = result.data;
     }
   } catch (e) {
     if (e?.digest === "HANGING_PROMISE_REJECTION") {

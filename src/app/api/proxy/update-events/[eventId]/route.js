@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_BASE_URL, readJson } from "@/lib/api";
 
 export async function PATCH(request, { params }) {
   try {
@@ -20,23 +19,29 @@ export async function PATCH(request, { params }) {
     }
 
     const { eventId } = await params;
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
 
-    const res = await fetch(`${API_BASE_URL}/update-events/${eventId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
+    const res = await fetch(
+      `${API_BASE_URL}/update-events/${encodeURIComponent(eventId)}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    const result = await readJson(res);
+    return NextResponse.json(result.data ?? { message: result.message }, {
+      status: result.status,
     });
-
-    const data = await res.json().catch(() => ({}));
-    return NextResponse.json(data, { status: res.status });
   } catch (error) {
+    console.error("update-events proxy failed:", error);
     return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
+      { message: "Could not reach the API. Please try again." },
+      { status: 502 }
     );
   }
 }
