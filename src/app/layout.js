@@ -19,6 +19,25 @@ const inter = Inter({
 export const metadata = {
   title: "ImpactHub — Social Development Events Platform",
   description: "Discover, join, and create community service events that make a difference.",
+  icons: [
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "32x32",
+      url: "/ImpactHubLogo.png",
+    },
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "16x16",
+      url: "/ImpactHubLogo.png",
+    },
+    {
+      rel: "apple-touch-icon",
+      sizes: "180x180",
+      url: "/ImpactHubLogo.png",
+    },
+  ],
 };
 
 export default function RootLayout({ children }) {

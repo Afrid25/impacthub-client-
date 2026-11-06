@@ -7,7 +7,6 @@ export async function proxy(request) {
     const session = await auth.api.getSession({
       headers: request.headers,
     });
-    console.log("Proxy session:", session);
     if (!session?.user) {
       const loginUrl = new URL("/login", request.url);
 
@@ -35,5 +34,7 @@ export const config = {
     "/add-events/:path*",
     "/manage-events/:path*",
     "/joined-events/:path*",
+    "/all-events/:path*",
+    
   ],
 };

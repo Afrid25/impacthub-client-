@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +21,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
 import { toast } from "sonner";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
 
 const eventTypes = [
   "Cleanup",
@@ -49,6 +48,9 @@ export default function EditEventsDialog({
   onSave,
 }) {
   const eventId = event?._id || event?.id;
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
   const [formData, setFormData] = useState({
     title: event?.title || "",
     eventType: event?.eventType || eventTypes[0],
@@ -130,13 +132,20 @@ export default function EditEventsDialog({
 
     setLoading(true);
     try {
+      if (!user) {
+        toast.error("Please log in to edit this event.");
+        router.push("/login");
+        onClose();
+        setLoading(false);
+        return;
+      }
       // Updates the ORIGINAL event; ownership is verified server-side.
-      const res = await fetch(`${API_BASE_URL}/update-events/${eventId}`, {
+      // JWT is attached by the Next.js proxy route (see proxy/update-events/[eventId]/route.js).
+      const res = await fetch(`/api/proxy/update-events/${eventId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify(updates),
       });
 

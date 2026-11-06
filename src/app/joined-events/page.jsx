@@ -40,7 +40,8 @@ function JoinedEventsSkeleton() {
 }
 
 async function JoinedEventsContent() {
-  const requestHeaders = await headers();
+   const requestHeaders = await headers();
+
   const session = await auth.api.getSession({
     headers: requestHeaders,
   });

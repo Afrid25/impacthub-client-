@@ -1,6 +1,8 @@
 
 "use client";
 
+
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "sonner";
@@ -32,6 +34,7 @@ import {
   AvatarImage,
   AvatarFallback,
 } from "@/components/ui/avatar";
+import Image from "next/image";
 
 const defaultNavLinks = [
   { label: "Upcoming Events", href: "/all-events" },
@@ -260,9 +263,13 @@ export function Navbar({
             onClick={() => setMobileOpen(false)}
             className="flex w-fit items-center gap-2.5 transition-opacity hover:opacity-90"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
-              IH
-            </div>
+            <Image
+              src="/ImpactHubLogo.png"
+              alt={`${brand} logo`}
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full object-cover"
+            />
 
             <span className="text-xl font-bold tracking-tight text-foreground">
               {brand}

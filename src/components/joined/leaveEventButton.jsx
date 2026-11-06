@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,21 +17,28 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
-
 export default function LeaveEventButton({ joiningId, onLeave }) {
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // Deletes ONLY the participation record (joiningCollection) by its _id.
   const handleLeave = async () => {
     if (deleting) return;
+    if (!user) {
+      toast.error("Please log in to leave this event.");
+      router.push("/login");
+      setOpen(false);
+      return;
+    }
     setDeleting(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/delete-events/${joiningId}`,
-        { method: "DELETE", credentials: "include" }
+        `/api/proxy/delete-events/${joiningId}`,
+        { method: "DELETE" }
       );
       const data = await res.json().catch(() => ({}));
       if (res.ok) {

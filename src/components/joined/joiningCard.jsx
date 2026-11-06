@@ -6,9 +6,6 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Calendar, MapPin, User } from "lucide-react";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
-
 const JoiningCardPage = ({ event, formattedDate, formattedTime }) => {
   const router = useRouter();
   const { data: session } = authClient.useSession();
@@ -33,6 +30,8 @@ const JoiningCardPage = ({ event, formattedDate, formattedTime }) => {
     setIsJoining(true);
 
     try {
+      // userId is intentionally omitted: the backend uses the verified JWT
+      // subject as the user identity (see proxy/joined/route.js).
       const data = {
         bookingDate: new Date().toISOString(),
         eventId: event?._id || event?.id,
@@ -42,19 +41,16 @@ const JoiningCardPage = ({ event, formattedDate, formattedTime }) => {
         date: event?.date,
         location: event?.location,
         thumbnail: event?.thumbnail,
-        userId: user?.id || "",
         userName: user?.name || "",
         userEmail: user?.email || "",
         userImage: user?.image || "",
       };
 
-      // Identity fields are re-applied server-side from the verified session.
-      const res = await fetch(`${API_BASE_URL}/joined`, {
+      const res = await fetch("/api/proxy/joined", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
         body: JSON.stringify(data),
       });
 

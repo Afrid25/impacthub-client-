@@ -1,9 +1,16 @@
 import React, { Suspense } from "react";
 import AllEventsClient from "./client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
+
+
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
+  process.env.NEXT_PUBLIC_API_URL ;
+
+  
 
 function AllEventsSkeleton() {
   return (
@@ -35,24 +42,33 @@ function AllEventsSkeleton() {
   );
 }
 
+//
 async function AllEventsContent() {
   let data = [];
+
   try {
     const res = await fetch(`${API_BASE_URL}/all-events`, {
       cache: "no-store",
     });
+
     if (res.ok) {
       data = (await res.json()) || [];
+    } else {
+      console.error("Failed to fetch events:", res.status);
     }
-  } catch (e) {
-    if (e?.digest === "HANGING_PROMISE_REJECTION") {
-      throw e;
+  } catch (error) {
+    if (error?.digest === "HANGING_PROMISE_REJECTION") {
+      throw error;
     }
-    console.error("Failed to fetch events:", e);
-    data = [];
+
+    console.error("Failed to fetch events:", error);
   }
 
-  return <AllEventsClient initialEvents={Array.isArray(data) ? data : []} />;
+  return (
+    <AllEventsClient
+      initialEvents={Array.isArray(data) ? data : []}
+    />
+  );
 }
 
 export default function AllEventsPage() {

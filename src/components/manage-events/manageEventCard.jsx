@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, Pencil, Trash2, Calendar, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4500";
 
 const formatDate = (dateValue) => {
   if (!dateValue) return "Date unavailable";
@@ -22,19 +21,29 @@ const formatDate = (dateValue) => {
 
 export default function ManageEventCard({ event, onEdit, onDelete }) {
   const eventId = event._id || event.id;
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // Deletes the ORIGINAL event (eventsCollection) after confirmation.
   const handleDeleteConfirm = async () => {
     if (deleting) return;
+    if (!user) {
+      toast.error("Please log in to delete this event.");
+      router.push("/login");
+      setDeleteOpen(false);
+      return;
+    }
     setDeleting(true);
     try {
+      // JWT is attached by the Next.js proxy route
+      // (see proxy/created-events/[eventId]/route.js).
       const response = await fetch(
-        `${API_BASE_URL}/created-events/${eventId}`,
+        `/api/proxy/created-events/${eventId}`,
         {
           method: "DELETE",
-          credentials: "include",
         }
       );
 
