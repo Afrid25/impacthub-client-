@@ -19,7 +19,7 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
 // Better Auth base URL (must match BETTER_AUTH_URL in the client)
-const BASE_URL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+const BASE_URL = process.env.BETTER_AUTH_URL;
 const JWKS_URL = `${BASE_URL.replace(/\/$/, "")}/api/auth/jwks`;
 
 const jwks = createRemoteJWKSet(new URL(JWKS_URL));
