@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "./lib/auth";
 
+// Guards the PRIVATE pages only. Upcoming Events (/all-events) and Event
+// Details (/all-events/[id]) must stay public, so they are not listed here.
 export async function proxy(request) {
   try {
     const session = await auth.api.getSession({
@@ -34,7 +36,5 @@ export const config = {
     "/add-events/:path*",
     "/manage-events/:path*",
     "/joined-events/:path*",
-    "/all-events/:path*",
-    
   ],
 };
